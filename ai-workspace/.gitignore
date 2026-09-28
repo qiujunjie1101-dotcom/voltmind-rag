@@ -1,0 +1,40 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Browser validation outputs
+/test-results/
+/playwright-report/
+/artifacts/
+
+# Personal deployment target; secrets are never stored here
+/code/deploy.local.json
+/code/.deploy.local.*.tmp
+/.workspace-deploy/
+
+# Personal workspace config: local project paths and roles stay on this machine
+/code/projects.local.json
+
+# TypeScript incremental build info
+*.tsbuildinfo

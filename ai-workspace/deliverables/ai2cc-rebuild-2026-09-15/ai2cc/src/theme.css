@@ -1,0 +1,58 @@
+:root { color-scheme: light; }
+:root[data-theme=dark] {
+  color-scheme: dark;
+  color: #d1d5dd;
+  background: #181a1f;
+  --color-background: #181a1f;
+  --color-foreground: #d1d5dd;
+  --color-primary: #91a9ee;
+  --color-primary-foreground: #181a1f;
+  --color-secondary: #252830;
+  --color-secondary-foreground: #d1d5dd;
+  --color-muted: #22252c;
+  --color-muted-foreground: #a0a8b8;
+  --color-accent: #292e39;
+  --color-accent-foreground: #e1e5ef;
+  --color-border: #30343e;
+  --color-input: #383e4b;
+  --color-ring: #91a9ee;
+  --color-card: #1e2128;
+  --color-card-foreground: #d1d5dd;
+  --color-popover: #1e2128;
+  --color-popover-foreground: #d1d5dd;
+}
+[data-theme=dark] ::selection { background: #3b4c75; }
+[data-theme=dark] .topbar { background: #181a1ff5; border-color: #2b2f38; }
+[data-theme=dark] .brand-logo img { filter: invert(1); mix-blend-mode: screen; }
+[data-theme=dark] :is(.sidebar,.sidebar-toggle,.skip-link,.local-editor-sheet,.save-toast) { background: #181a1f; border-color: #30343e; }
+[data-theme=dark] .mobile-sheet { background: #181a1f!important; }
+[data-theme=dark] :is(.header-divider,.article-separator) { background: #30343e; }
+[data-theme=dark] :is(h1,.markdown h2,.markdown h3,.markdown strong,.editor-connect h3,.editor-preview>h2) { color: #e0e4ec; }
+[data-theme=dark] :is(.markdown,.folder-row) { color: #b9c1cf; }
+[data-theme=dark] :is(.doc-row,.crumb-current,.toc-title,.brand-doc-label,.header-label,.local-project-button,.sidebar-toggle,.theme-toggle,.document-description,.document-actions>button,.editor-connect,.page-navigation strong,.editor-reload) { color: #a2adbf; }
+[data-theme=dark] :is(.document-meta,.status,.breadcrumb-bar,.sidebar-heading,.toc nav a,.page-navigation span,.editor-path,.editor-file-fields label,.media-size-tools,.editor-fineprint,.editor-media-hint,.editor-footer>span,.editor-heading [data-slot=sheet-description]) { color: #909caf; }
+[data-theme=dark] :is(.nested,.status,.toc nav,.page-navigation,.markdown hr,.markdown td,.markdown th) { border-color: #30343e; }
+[data-theme=dark] :is(.folder-row:hover,.doc-row:hover,.local-project-button:hover,.sidebar-heading>button:hover,.sidebar-toggle:hover,.theme-toggle:hover) { background: #262b35; color: #e0e4ec; }
+[data-theme=dark] .doc-row.selected { background: #29334a; color: #acc1ff; }
+[data-theme=dark] :is(.toc nav a.active,.toc nav a:hover,.document-actions>button:hover,.page-navigation a:hover strong,.media-size-tools button) { color: #a4bbfa; }
+[data-theme=dark] .markdown a { color: #a4bbfa; text-decoration-color: #4c5d85; }
+[data-theme=dark] .markdown blockquote { background: #202735; border-color: #6176a5; color: #b2bfd8; }
+[data-theme=dark] :is(.markdown :not(pre)>code,.editor-connect code) { background: #252a34; border-color: #333c4c; color: #b8c7e4; }
+[data-theme=dark] :is(.markdown pre,.markdown th) { background: #20232b; border-color: #303744; color: #bdc7d9; }
+[data-theme=dark] .markdown td:first-child { color: #b4c3dc; }
+[data-theme=dark] .copy-code:hover { background: #303847; border-color: #46536c; color: #d1ddf3; }
+[data-theme=dark] .hljs { background: #20232b; color: #d0d8e8; }
+[data-theme=dark] :is(.hljs-keyword,.hljs-selector-tag,.hljs-literal,.hljs-deletion) { color: #f398a4; }
+[data-theme=dark] :is(.hljs-string,.hljs-regexp,.hljs-addition,.hljs-attr) { color: #a4d3b1; }
+[data-theme=dark] :is(.hljs-title,.hljs-section,.hljs-name) { color: #c6b2ed; }
+[data-theme=dark] :is(.hljs-number,.hljs-symbol,.hljs-built_in,.hljs-variable,.hljs-meta) { color: #91bdf1; }
+[data-theme=dark] :is(.hljs-comment,.hljs-quote) { color: #909aab; }
+[data-theme=dark] :is(.editor-toolbar,.editor-panes>textarea) { background: #1e222a; color: #c4cee0; border-color: #343c4a; }
+[data-theme=dark] :is(.editor-panes,.editor-view-modes) { border-color: #343c4a; }
+[data-theme=dark] :is(.editor-file-fields input,.editor-file-fields select,.media-size-tools input,.media-size-tools select,.creation-types button) { background: #232832; border-color: #3c4657; color: #c4cee0; }
+[data-theme=dark] :is(.creation-types button.active,.editor-view-modes button[aria-pressed=true]) { background: #2d3a56; border-color: #556a96; color: #bed0ff; }
+[data-theme=dark] :is(.editor-toolbar>button,.editor-view-modes button) { color: #a4b2c9; }
+[data-theme=dark] :is(.editor-warning,.editor-error) { background: #342823; color: #e8b19a!important; }
+[data-theme=dark] .unsaved-badge { background: #342f23; color: #dfc28b; }
+[data-theme=dark] .save-toast { color: #bbd3c5; }
+[data-theme=dark] [data-slot=sheet-overlay] { background: #0008; }

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "deploymentId": "00000000000000000000000000000000",
+  "host": "server.example.com",
+  "port": 22,
+  "username": "deploy",
+  "auth": "key",
+  "privateKeyPath": "",
+  "remoteDir": "/var/www/ai-workspace",
+  "publicUrl": "https://workspace.example.com/",
+  "mode": "existing",
+  "httpPort": 8080,
+  "hostKey": null
+}

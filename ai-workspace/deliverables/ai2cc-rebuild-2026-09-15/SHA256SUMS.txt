@@ -1,0 +1,2 @@
+a8545dd236cc9e4ebed031597916bacaa028b872fc54493734bde21da816892b  AI2CC-exact-template.zip
+f4d5e9e409ffe505dd3addfbe24c4fa052f1cea4f2a3482ad65104fd51aa2e95  AI2CC-完整复刻Prompt.md

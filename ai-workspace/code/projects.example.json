@@ -1,0 +1,9 @@
+{
+  "$schema": "./projects.schema.json",
+  "version": 1,
+  "workspace": {
+    "name": "Ai Workspace"
+  },
+  "projects": [],
+  "roles": []
+}
