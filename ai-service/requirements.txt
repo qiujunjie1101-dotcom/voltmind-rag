@@ -1,0 +1,7 @@
+# Runtime dependencies
+# cryptography: encrypt custom provider API keys at rest (Fernet)
+cryptography==44.0.1
+fastapi==0.115.6
+openai==3.19.2
+python-dotenv==1.2.3
+uvicorn[standard]==0.34.0
