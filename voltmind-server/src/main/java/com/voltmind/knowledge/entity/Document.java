@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
  *
  * <p>一行代表「某个知识库里的一份已上传文件」。文件本体不入库，只在
  * {@code storageKey} 里存相对路径，实际内容由文件存储组件管理；
- * {@code status} 与 {@code chunkCount} 是给后续向量化流程回填的位置，
- * 当前上传完成后固定为 PENDING 与 0。</p>
+ * {@code status}、{@code chunkCount} 与 {@code processingVersion} 由处理编排回填，
+ * 当前上传完成后分别为 PENDING、0 与 0。</p>
  */
 @TableName("kb_document")
 public class Document {
@@ -31,6 +31,12 @@ public class Document {
     private DocumentStatus status;
     /** 已切分的文本块数量，向量化后回填。 */
     private Integer chunkCount;
+    /** 处理版本号；每次成功抢占处理任务时原子递增。 */
+    private Long processingVersion;
+    /** 最近一次处理失败的稳定错误码，成功或重新开始处理时清空。 */
+    private String processingErrorCode;
+    /** 最近一次处理失败的安全摘要，不保存堆栈、路径或文档正文。 */
+    private String processingErrorMessage;
     /** 创建时间，由数据库默认值写入。 */
     private LocalDateTime createdAt;
     /** 更新时间，由数据库在行变更时自动刷新。 */
@@ -52,6 +58,12 @@ public class Document {
     public void setStatus(DocumentStatus status) { this.status = status; }
     public Integer getChunkCount() { return chunkCount; }
     public void setChunkCount(Integer chunkCount) { this.chunkCount = chunkCount; }
+    public Long getProcessingVersion() { return processingVersion; }
+    public void setProcessingVersion(Long processingVersion) { this.processingVersion = processingVersion; }
+    public String getProcessingErrorCode() { return processingErrorCode; }
+    public void setProcessingErrorCode(String processingErrorCode) { this.processingErrorCode = processingErrorCode; }
+    public String getProcessingErrorMessage() { return processingErrorMessage; }
+    public void setProcessingErrorMessage(String processingErrorMessage) { this.processingErrorMessage = processingErrorMessage; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

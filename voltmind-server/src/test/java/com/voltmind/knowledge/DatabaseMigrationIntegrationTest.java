@@ -3,6 +3,7 @@ package com.voltmind.knowledge;
 import java.util.List;
 import java.util.UUID;
 
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,7 +31,10 @@ class DatabaseMigrationIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    /** V1 迁移已成功执行，两张业务表的列、唯一键、外键、检查约束与索引都已建立。 */
+    @Autowired
+    private Flyway flyway;
+
+    /** V1-V4 均成功执行，三张业务表及处理版本、Chunk 约束和索引均已建立。 */
     @Test
     void flywayCreatedExpectedSchema() {
         assertEquals(1, jdbcTemplate.queryForObject(
@@ -39,12 +43,25 @@ class DatabaseMigrationIntegrationTest {
         assertEquals(List.of("id", "name", "description", "created_at", "updated_at"),
                 columnsOf("kb_knowledge_base"));
         assertEquals(List.of("id", "knowledge_base_id", "file_name", "file_type", "file_size",
-                        "storage_key", "status", "chunk_count", "created_at", "updated_at"),
+                        "storage_key", "status", "chunk_count", "processing_version",
+                        "processing_error_code", "processing_error_message", "created_at", "updated_at"),
                 columnsOf("kb_document"));
+        assertEquals(List.of("id", "document_id", "processing_version", "chunk_index", "content",
+                        "content_hash", "page_number", "section", "created_at"),
+                columnsOf("kb_document_chunk"));
         assertEquals(1, schemaObjectCount("TABLE_CONSTRAINTS", "CONSTRAINT_NAME", "uk_kb_knowledge_base_name"));
         assertEquals(1, schemaObjectCount("TABLE_CONSTRAINTS", "CONSTRAINT_NAME", "fk_kb_document_knowledge_base"));
         assertEquals(1, schemaObjectCount("TABLE_CONSTRAINTS", "CONSTRAINT_NAME", "chk_kb_document_status"));
+        assertEquals(1, schemaObjectCount("TABLE_CONSTRAINTS", "CONSTRAINT_NAME",
+                "fk_kb_document_chunk_document"));
+        assertEquals(1, schemaObjectCount("TABLE_CONSTRAINTS", "CONSTRAINT_NAME",
+                "uk_kb_document_chunk_doc_version_index"));
         assertEquals(3, schemaObjectCount("STATISTICS", "INDEX_NAME", "idx_kb_document_kb_status_created"));
+        assertEquals(3, schemaObjectCount("STATISTICS", "INDEX_NAME",
+                "uk_kb_document_chunk_doc_version_index"));
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '4' AND success = 1",
+                Integer.class));
     }
 
     /** 表与列的中文注释齐全，运维可以直接读库理解字段含义，不必翻代码。 */
@@ -53,15 +70,53 @@ class DatabaseMigrationIntegrationTest {
         assertEquals("Flyway数据库迁移历史表", tableComment("flyway_schema_history"));
         assertEquals("知识库基本信息表", tableComment("kb_knowledge_base"));
         assertEquals("知识库文档元数据表", tableComment("kb_document"));
+        assertEquals("文档解析分块内容表", tableComment("kb_document_chunk"));
         assertEquals(List.of("迁移执行顺序", "迁移版本号", "迁移描述", "迁移类型", "迁移脚本名称",
                         "迁移脚本校验值", "执行迁移的数据库用户", "迁移执行时间", "迁移执行耗时（毫秒）", "迁移是否成功"),
                 columnCommentsOf("flyway_schema_history"));
         assertEquals(List.of("知识库主键", "知识库名称", "知识库描述", "创建时间", "更新时间"),
                 columnCommentsOf("kb_knowledge_base"));
         assertEquals(List.of("文档主键", "所属知识库ID", "原始文件名", "文件类型", "文件大小（字节）",
-                        "文件存储标识", "处理状态：PENDING待处理，INDEXING处理中，INDEXED处理完成，FAILED处理失败",
-                        "文档分块数量", "创建时间", "更新时间"),
+                        "文件存储标识",
+                        "处理状态：PENDING待处理，INDEXING处理中，PARSED解析完成，INDEXED向量化完成，FAILED处理失败",
+                        "文档分块数量", "文档处理版本号，用于拒绝过期任务结果", "最近一次处理失败错误码",
+                        "最近一次处理失败安全摘要", "创建时间", "更新时间"),
                 columnCommentsOf("kb_document"));
+        assertEquals(List.of("文档分块主键", "所属文档ID", "生成该分块的文档处理版本号",
+                        "分块在当前文档版本中的顺序，从0开始", "分块正文内容", "分块正文SHA-256摘要",
+                        "原文页码，从1开始，无法定位时为空", "原文章节标题，无法识别时为空", "创建时间"),
+                columnCommentsOf("kb_document_chunk"));
+    }
+
+    /** V4 对既有文档采用版本 0，且新增 PARSED 状态能通过数据库约束。 */
+    @Test
+    void existingDocumentDefaultsToVersionZeroAndAcceptsParsedStatus() {
+        jdbcTemplate.update("INSERT INTO kb_knowledge_base(name) VALUES (?)",
+                "v4-compatibility-test-" + UUID.randomUUID());
+        Long knowledgeBaseId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+        String storageKey = "v4-compatibility-test-" + UUID.randomUUID();
+        jdbcTemplate.update("""
+                INSERT INTO kb_document
+                    (knowledge_base_id, file_name, file_type, file_size, storage_key, status)
+                VALUES (?, 'existing.txt', 'text/plain', 1, ?, 'PENDING')
+                """, knowledgeBaseId, storageKey);
+        Long documentId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+
+        assertEquals(0L, jdbcTemplate.queryForObject(
+                "SELECT processing_version FROM kb_document WHERE id = ?", Long.class, documentId));
+        assertEquals(1, jdbcTemplate.update(
+                "UPDATE kb_document SET status = 'PARSED' WHERE id = ?", documentId));
+        assertEquals("PARSED", jdbcTemplate.queryForObject(
+                "SELECT status FROM kb_document WHERE id = ?", String.class, documentId));
+    }
+
+    /** 已迁移数据库再次执行 Flyway 时不会重复执行 V4。 */
+    @Test
+    void repeatedFlywayMigrationDoesNotReapplyV4() {
+        assertEquals(0, flyway.migrate().migrationsExecuted);
+        assertEquals(1, jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '4' AND success = 1",
+                Integer.class));
     }
 
     /** 名称唯一性由数据库兜底：应用层的重名校验之外，重复插入仍会被约束拒绝。 */

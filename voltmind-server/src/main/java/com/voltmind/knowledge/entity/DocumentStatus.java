@@ -9,8 +9,10 @@ package com.voltmind.knowledge.entity;
 public enum DocumentStatus {
     /** 已上传、尚未进入向量化，上传完成后的初始状态。 */
     PENDING,
-    /** 正在切分与向量化。 */
+    /** 正在处理；R1-4 阶段表示解析与切片中。 */
     INDEXING,
+    /** 解析与切片完成、Chunk 已持久化，但尚未向量化。 */
+    PARSED,
     /** 向量化完成，可被检索。 */
     INDEXED,
     /** 处理失败，需要重新上传或重试。 */
