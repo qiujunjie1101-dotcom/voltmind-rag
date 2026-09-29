@@ -2,14 +2,14 @@
 title: VoltMind 前端工作台结构
 slug: voltmind-web-workbench
 description: 前端工程的结构分区、设计令牌、组件契约、交互状态与后端接入方式。
-date: '2026-09-28'
-status: 已接入问答接口
+date: '2026-09-29'
+status: 已接入问答与知识库接口
 ---
 ## 定位与范围
 
 `voltmind-web/` 是 VoltMind 的前端工作台，技术选型见《[技术架构](../01-架构设计/02-技术架构.md)》。
 
-对话页已接入真实接口，**知识库页仍是占位数据**——文档列表与统计数字不是真实内容，RAG 与知识检索尚未实现。
+对话页接入 Python AI 服务，知识库页接入 Java 业务服务。知识库与文档列表、统计、上传和删除均来自真实接口；文档解析、向量化、RAG 与知识检索尚未实现。
 
 ## 布局结构
 
@@ -28,7 +28,7 @@ status: 已接入问答接口
 | 导航键 | 视图 | 状态 |
 | --- | --- | --- |
 | `chat` | 对话工作台 | 已接入 `POST /api/v1/chat`，真实模型回答，顶部可按供应商切换模型 |
-| `knowledge` | 知识库概览 | 静态占位数据，未接入 |
+| `knowledge` | 知识库管理 | 已接入 Java 业务服务，支持知识库增删改查与文档上传、列表和删除 |
 | `settings` | 设置 | 外观、服务端连接、模型服务、关于 |
 | `documents` | — | 未实现，禁用态 |
 | `retrieval` | — | 未实现，禁用态 |
@@ -120,6 +120,23 @@ Tailwind CSS 4 采用 CSS-first 配置，通过 `@theme inline` 把语义令牌�
 
 限制：不做模型连通性测试（没有“测试连接”按钮），不支持非 OpenAI 兼容协议；不做流式输出（未实现 SSE），不做多轮上下文与检索引用。
 
+## 知识库与文档交互
+
+知识库页采用「顶部真实统计 + 左侧知识库列表 + 右侧当前库文档」结构。桌面端左右并排，窄屏上下排列；文档表格在窄屏内横向滚动，不挤压操作按钮。
+
+| 状态 | 表现 |
+| --- | --- |
+| 首次加载 | 知识库和文档分别显示加载状态；请求失败显示错误与重试入口 |
+| 空数据 | 未创建知识库与当前知识库无文档分别显示空状态及主操作 |
+| 新建 / 编辑 | Reka UI Dialog 承载表单，名称去除首尾空格并在提交前校验必填与长度；服务端重复名称错误显示在表单内 |
+| 删除 | 知识库和文档均采用页面内二次确认；确认后等待服务端完成数据库与磁盘文件清理再刷新列表 |
+| 上传 | 隐藏文件输入由按钮触发；前端先校验非空、20 MiB 上限、安全文件名及扩展名，上传时禁用重复操作 |
+| 成功反馈 | 创建、修改、上传和删除完成后显示页面内状态消息并刷新真实列表 |
+
+支持 `.pdf`、`.docx`、`.md`、`.markdown`、`.txt`。客户端不提交路径，只把浏览器选择的 `File` 作为 multipart 的 `file` 字段发送，服务器生成 `storageKey`。
+
+文档状态严格映射后端枚举：`PENDING` 为“待处理”、`INDEXING` 为“处理中”、`INDEXED` 为“已完成”、`FAILED` 为“处理失败”。R1-3 不把 `PENDING` 表达成已索引；片段数读取后端 `chunkCount`，当前解析链路未启用时显示 `0` 和“解析与向量化尚未启用”。
+
 ## 可访问性
 
 - 侧栏用 `aside` 加 `aria-label`，导航用 `nav` 与列表结构。
@@ -133,7 +150,7 @@ Tailwind CSS 4 采用 CSS-first 配置，通过 `@theme inline` 把语义令牌�
 
 ## 与后端的衔接
 
-后端为 `ai-service/`，接口契约见《[AI 服务接口契约](../01-架构设计/04-AI服务接口契约.md)》。
+前端同时连接 `ai-service/` 与 `voltmind-server/`。AI 契约见《[AI 服务接口契约](../01-架构设计/04-AI服务接口契约.md)》，Java 契约见《[Java 业务服务接口契约](../01-架构设计/05-Java业务服务接口契约.md)》。
 
 | 用途 | 目标接口 |
 | --- | --- |
@@ -141,8 +158,10 @@ Tailwind CSS 4 采用 CSS-first 配置，通过 `@theme inline` 把语义令牌�
 | 供应商增删改查 | `GET/POST /api/v1/providers`、`PUT/DELETE /api/v1/providers/{id}` |
 | 可用模型列表 | `GET /api/v1/models` |
 | 服务探活 | `GET /health` |
+| 知识库管理 | Java `GET/POST /api/v1/knowledge-bases`、`GET/PUT/DELETE /api/v1/knowledge-bases/{id}` |
+| 文档管理 | Java `POST/GET /api/v1/knowledge-bases/{id}/documents`、`GET/DELETE /api/v1/documents/{id}` |
 
-失败提示集中在 `src/lib/api-error.ts`，问答与供应商管理共用：超时给超时秒数，连接失败给服务地址与启动提示，后端错误状态展示 `服务返回 <状态码>：<detail>`。
+Python 请求继续使用 `src/lib/http.ts` 与 `src/lib/api-error.ts`。Java 请求独立使用 `src/lib/business-http.ts`，统一解包 `{ code, message, data }`，把网络错误、超时、异常响应格式和已知业务错误码转换为可展示提示。两套客户端互不改写对方的 Base URL、超时和错误契约。
 
 服务地址与超时通过 Vite 环境变量注入，**代码中不写死地址**，读取与校验集中在 `src/lib/env.ts`，变量缺失或非法时在应用启动阶段直接报错。
 
@@ -150,10 +169,12 @@ Tailwind CSS 4 采用 CSS-first 配置，通过 `@theme inline` 把语义令牌�
 | --- | --- |
 | `VITE_API_BASE_URL` | Python AI 服务地址，需与后端 `CORS_ALLOW_ORIGINS` 放行的前端来源配对 |
 | `VITE_API_TIMEOUT_MS` | 必须大于后端 `LLM_TIMEOUT_SECONDS`，否则前端先中断，用户看不到后端的超时原因 |
+| `VITE_BUSINESS_API_BASE_URL` | Java 业务服务地址，本地默认 `http://127.0.0.1:8080` |
+| `VITE_BUSINESS_API_TIMEOUT_MS` | Java CRUD 与文件上传请求超时，本地默认 15 秒 |
 
 `.env` 不含密钥、需要入库；个人覆盖写 `.env.local`（已忽略）。**禁止把 DeepSeek API Key 放进前端环境变量**——Vite 注入的变量会明文出现在浏览器产物里，密钥只由后端持有。
 
-跨域由后端 CORS 放行，前端不使用代理。若改成同源部署，可在 `vite.config.ts` 启用已留出的 `/api` 代理。
+跨域由两个后端分别按来源白名单放行，前端不使用代理。Java 默认只放行 `http://127.0.0.1:5174` 与 `http://localhost:5174`，可通过服务端 `CORS_ALLOWED_ORIGINS` 调整，不使用全通配符。
 
 失败提示按原因分类：超时给超时秒数，连接失败给服务地址与启动提示，后端错误状态展示 `服务返回 <状态码>：<detail>`。
 
@@ -163,5 +184,5 @@ Tailwind CSS 4 采用 CSS-first 配置，通过 `@theme inline` 把语义令牌�
 - 是否需要引入状态管理：对话状态仍在单个视图内，模型目录用模块级单例足够，暂未引入 Pinia。
 - 前端目前没有单元测试框架。`src/lib/api-error.ts` 的错误分类与 `use-model-catalog.ts` 的选择回退逻辑都是纯逻辑，适合补测试，尚未补；当前靠构建检查加无头浏览器流程脚本验证。
 - 模型服务缺「测试连接」能力，用户配错地址或密钥只能等到实际提问才发现。
-- 知识库页仍为占位数据，等文档入库链路实现后替换。
+- 文档解析、分块与向量化未实现，因此真实文档会停留在 `PENDING`，片段数为 `0`。
 - 流式输出、多轮上下文、引用来源的交互形态待定。
