@@ -13,6 +13,7 @@ ai-service/
 │   ├── api/v1/chat.py             # 问答接口
 │   ├── api/v1/providers.py        # 模型供应商增删改查
 │   ├── api/v1/models.py           # 可用模型列表（对话页选择器用）
+│   ├── parsing/                    # PDF/DOCX/Markdown/TXT 统一结构化解析
 │   ├── schemas/                   # 接口契约（health / chat / error / provider）
 │   ├── security/crypto.py         # API Key 的服务端加解密与脱敏
 │   ├── security/url_guard.py      # 自定义 Base URL 校验（防 SSRF）
@@ -159,6 +160,24 @@ uvicorn app.main:app --reload
 | `uptime_seconds` | number | 进程已运行秒数 |
 | `timestamp` | string | 服务端当前时间（UTC，ISO 8601） |
 
+## 文档解析模块
+
+`app/parsing/` 提供内部 `DocumentParser`，把 PDF、DOCX、Markdown 和 TXT 文件字节转换为统一的 `ParsedDocument`。该模块当前没有 HTTP 路由，不执行切片、Embedding、向量写入或 Java 回调。
+
+```python
+from app.parsing import DocumentParser
+
+parsed = DocumentParser().parse(
+    document_id=42,
+    file_name="manual.pdf",
+    content=pdf_bytes,
+)
+```
+
+`ParsedBlock` 只表达解析阶段可确认的文本、页码与章节，不是最终检索 Chunk。PDF 只支持自带文本层的文件，不做 OCR；DOCX 按正文 XML 顺序读取段落与表格；Markdown 保留标题层级和围栏代码；TXT 只接受严格 UTF-8 和 UTF-8 BOM。
+
+单文件默认限制 20 MiB，同时限制 PDF 页数、DOCX ZIP 条目与解压后大小、解析块数和提取字符数。解析全程只读内存字节，不执行宏、脚本、代码块或外部资源。
+
 ## 问答接口
 
 `POST /api/v1/chat`，单轮问答。
@@ -274,6 +293,7 @@ python -m pytest
 | `test_health.py` | 健康检查契约 |
 | `test_docs.py` | 调试页面与 OpenAPI |
 | `test_cors.py` | 放行来源的预检与响应头、PUT/DELETE 预检、未放行来源拿不到头 |
+| `test_document_parsing.py` | 四种格式、PDF 页序与加密/损坏、DOCX 标题表格顺序、Markdown 代码块、UTF-8/BOM、异常与资源限制 |
 
 用例全程不读取 `data/`：供应商服务在测试里指向临时目录，跑完不会污染本机配置。
 

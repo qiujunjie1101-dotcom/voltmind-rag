@@ -71,3 +71,83 @@ class ProviderStoreError(ProviderError):
     """配置文件损坏或读写失败，属于服务端问题。"""
 
     http_status = 500
+
+
+class DocumentParsingError(ServiceError):
+    """不可信文档无法转换为统一文本结构。"""
+
+    code = "DOCUMENT_PARSE_FAILED"
+    http_status = 422
+
+
+class EmptyDocumentError(DocumentParsingError):
+    """上传文件没有任何字节。"""
+
+    code = "EMPTY_FILE"
+    http_status = 400
+
+    def __init__(self) -> None:
+        super().__init__("Document file must not be empty")
+
+
+class DocumentTooLargeError(DocumentParsingError):
+    """文件超过解析器允许的字节上限。"""
+
+    code = "FILE_TOO_LARGE"
+    http_status = 413
+
+    def __init__(self) -> None:
+        super().__init__("Document exceeds the configured size limit")
+
+
+class UnsupportedDocumentTypeError(DocumentParsingError):
+    """文件扩展名不在解析白名单中。"""
+
+    code = "UNSUPPORTED_FILE_TYPE"
+    http_status = 415
+
+    def __init__(self) -> None:
+        super().__init__("Only PDF, DOCX, Markdown and TXT files are supported")
+
+
+class CorruptDocumentError(DocumentParsingError):
+    """文件格式损坏或内容与声明格式不一致。"""
+
+    def __init__(self) -> None:
+        super().__init__("Document cannot be parsed")
+
+
+class EncryptedPdfError(DocumentParsingError):
+    """第一版不接受需要密码的 PDF。"""
+
+    code = "PDF_ENCRYPTED"
+
+    def __init__(self) -> None:
+        super().__init__("Encrypted PDF files are not supported")
+
+
+class NoTextContentError(DocumentParsingError):
+    """文件可读取，但没有可用于后续切片的有效文本。"""
+
+    code = "EMPTY_DOCUMENT_CONTENT"
+
+    def __init__(self) -> None:
+        super().__init__("Document content is empty")
+
+
+class TextDecodingError(DocumentParsingError):
+    """文本文件不是合法 UTF-8，禁止用替换字符静默吞错。"""
+
+    code = "TEXT_DECODING_FAILED"
+
+    def __init__(self) -> None:
+        super().__init__("Text document is not valid UTF-8")
+
+
+class ParsingResourceLimitError(DocumentParsingError):
+    """文件虽然未超过上传大小，但展开或解析结果超过资源预算。"""
+
+    code = "DOCUMENT_RESOURCE_LIMIT_EXCEEDED"
+
+    def __init__(self) -> None:
+        super().__init__("Document exceeds parsing resource limits")
