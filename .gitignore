@@ -11,6 +11,10 @@ venv/
 build/
 dist/
 
+# Java：Maven 构建产物与本地文件存储
+voltmind-server/target/
+voltmind-server/data/
+
 # 环境变量与密钥，禁止提交
 .env
 .env.*
@@ -18,3 +22,7 @@ dist/
 
 # 自定义模型供应商配置与加密主口令文件，禁止提交
 ai-service/data/
+
+# IDE
+.idea/
+*.iml

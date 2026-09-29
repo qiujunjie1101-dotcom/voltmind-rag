@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.4.9
+    container_name: voltmind-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-voltmind}
+      MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${DB_PORT:-13306}:3306"
+    volumes:
+      - voltmind_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  voltmind_mysql_data:
