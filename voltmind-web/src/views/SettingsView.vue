@@ -6,7 +6,12 @@ import ModelServiceCard from '@/components/model-service/ModelServiceCard.vue'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { isDark } from '@/composables/use-theme'
-import { apiBaseUrl, apiTimeoutMs } from '@/lib/env'
+import {
+  apiBaseUrl,
+  apiTimeoutMs,
+  businessApiBaseUrl,
+  businessApiTimeoutMs,
+} from '@/lib/env'
 import { cn } from '@/lib/utils'
 
 const themeOptions = [
@@ -15,6 +20,7 @@ const themeOptions = [
 ]
 
 const timeoutSeconds = computed(() => Math.round(apiTimeoutMs / 1000))
+const businessTimeoutSeconds = computed(() => Math.round(businessApiTimeoutMs / 1000))
 
 function applyTheme(value: boolean) {
   isDark.value = value
@@ -79,18 +85,28 @@ function applyTheme(value: boolean) {
             <dd class="font-mono text-xs">GET /health</dd>
           </div>
           <div class="flex items-center justify-between gap-4 py-2.5">
-            <dt class="text-muted-foreground shrink-0">服务地址</dt>
+            <dt class="text-muted-foreground shrink-0">Python AI 服务</dt>
             <dd class="truncate font-mono text-xs" :title="apiBaseUrl">{{ apiBaseUrl }}</dd>
           </div>
           <div class="flex items-center justify-between gap-4 py-2.5">
-            <dt class="text-muted-foreground">请求超时</dt>
+            <dt class="text-muted-foreground shrink-0">Java 业务服务</dt>
+            <dd class="truncate font-mono text-xs" :title="businessApiBaseUrl">
+              {{ businessApiBaseUrl }}
+            </dd>
+          </div>
+          <div class="flex items-center justify-between gap-4 py-2.5">
+            <dt class="text-muted-foreground">AI 请求超时</dt>
             <dd class="font-mono text-xs">{{ timeoutSeconds }} 秒</dd>
+          </div>
+          <div class="flex items-center justify-between gap-4 py-2.5">
+            <dt class="text-muted-foreground">业务请求超时</dt>
+            <dd class="font-mono text-xs">{{ businessTimeoutSeconds }} 秒</dd>
           </div>
         </dl>
         <p class="text-muted-foreground flex items-start gap-2 text-xs">
           <Server class="mt-0.5 size-3.5 shrink-0" />
           <span>
-            服务地址与超时来自 Vite 环境变量（<code class="font-mono">.env</code>），不写在代码里。
+            两个服务地址与超时来自 Vite 环境变量（<code class="font-mono">.env</code>），不写在代码里。
             API Key 只由后端持有：前端不读取、不转发，也不写入 localStorage。
           </span>
         </p>

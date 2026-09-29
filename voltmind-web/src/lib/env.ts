@@ -36,3 +36,15 @@ export const apiTimeoutMs = readPositiveNumber(
   'VITE_API_TIMEOUT_MS',
   import.meta.env.VITE_API_TIMEOUT_MS,
 )
+
+/** Java 业务服务地址，与 Python AI 服务保持独立。 */
+export const businessApiBaseUrl = readRequired(
+  'VITE_BUSINESS_API_BASE_URL',
+  import.meta.env.VITE_BUSINESS_API_BASE_URL,
+).replace(/\/+$/, '')
+
+/** Java 业务请求超时毫秒数。 */
+export const businessApiTimeoutMs = readPositiveNumber(
+  'VITE_BUSINESS_API_TIMEOUT_MS',
+  import.meta.env.VITE_BUSINESS_API_TIMEOUT_MS,
+)
